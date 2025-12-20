@@ -1,0 +1,122 @@
+[
+  {
+    "email": "ahmed.ali@example.com",
+    "username": "ahmed_ali",
+    "zip": "75500",
+    "city": "Karachi",
+    "state": "Sindh",
+    "country": "PK"
+  },
+  {
+    "email": "fatima.khan@example.com",
+    "username": "fatima_k",
+    "zip": "54000",
+    "city": "Lahore",
+    "state": "Punjab",
+    "country": "PK"
+  },
+  {
+    "email": "hassan.raza@example.com",
+    "username": "hassan_r",
+    "zip": "44000",
+    "city": "Islamabad",
+    "state": "Islamabad Capital Territory",
+    "country": "PK"
+  },
+  {
+    "email": "ayesha.malik@example.com",
+    "username": "ayesha_m",
+    "zip": "75300",
+    "city": "Karachi",
+    "state": "Sindh",
+    "country": "PK"
+  },
+  {
+    "email": "bilal.ahmed@example.com",
+    "username": "bilal_a",
+    "zip": "60000",
+    "city": "Multan",
+    "state": "Punjab",
+    "country": "PK"
+  },
+  {
+    "email": "zainab.hassan@example.com",
+    "username": "zainab_h",
+    "zip": "38000",
+    "city": "Faisalabad",
+    "state": "Punjab",
+    "country": "PK"
+  },
+  {
+    "email": "usman.sheikh@example.com",
+    "username": "usman_s",
+    "zip": "75400",
+    "city": "Karachi",
+    "state": "Sindh",
+    "country": "PK"
+  },
+  {
+    "email": "maryam.iqbal@example.com",
+    "username": "maryam_i",
+    "zip": "46000",
+    "city": "Rawalpindi",
+    "state": "Punjab",
+    "country": "PK"
+  },
+  {
+    "email": "ali.zaidi@example.com",
+    "username": "ali_z",
+    "zip": "71000",
+    "city": "Hyderabad",
+    "state": "Sindh",
+    "country": "PK"
+  },
+  {
+    "email": "sara.nawaz@example.com",
+    "username": "sara_n",
+    "zip": "25000",
+    "city": "Peshawar",
+    "state": "Khyber Pakhtunkhwa",
+    "country": "PK"
+  },
+  {
+    "email": "hamza.butt@example.com",
+    "username": "hamza_b",
+    "zip": "75500",
+    "city": "Karachi",
+    "state": "Sindh",
+    "country": "PK"
+  },
+  {
+    "email": "hira.siddiqui@example.com",
+    "username": "hira_s",
+    "zip": "54000",
+    "city": "Lahore",
+    "state": "Punjab",
+    "country": "PK"
+  },
+  {
+    "email": "imran.khan@example.com",
+    "username": "imran_k",
+    "zip": "44000",
+    "city": "Islamabad",
+    "state": "Islamabad Capital Territory",
+    "country": "PK"
+  },
+  {
+    "email": "nida.amin@example.com",
+    "username": "nida_a",
+    "zip": "75300",
+    "city": "Karachi",
+    "state": "Sindh",
+    "country": "PK"
+  },
+  {
+    "email": "faisal.mahmood@example.com",
+    "username": "faisal_m",
+    "zip": "60000",
+    "city": "Multan",
+    "state": "Punjab",
+    "country": "PK"
+  }
+]

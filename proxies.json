@@ -1,0 +1,16 @@
+IMPORTANT: This is just an example!
+
+To create your actual proxies.json:
+1. Copy this file: cp config/proxies.example.json config/proxies.json
+2. Replace all values with your REAL paid proxy credentials
+3. Format from your proxy provider should match:
+   - ip: Proxy server IP address
+   - port: Proxy server port (usually 8080, 3128, or custom)
+   - username: Your proxy authentication username
+   - password: Your proxy authentication password
+   - city: City where proxy is located
+   - state: State/Province where proxy is located
+   - zip: Postal code of proxy location
+
+Note: The geo-matching algorithm will pair users with proxies
+from the same zip code or city when possible.

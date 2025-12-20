@@ -1,0 +1,102 @@
+[
+  {
+    "ip": "192.168.1.100",
+    "port": 8080,
+    "username": "proxy_user_1",
+    "password": "proxy_password_1",
+    "city": "Karachi",
+    "state": "Sindh",
+    "zip": "75500",
+    "country": "PK"
+  },
+  {
+    "ip": "192.168.1.101",
+    "port": 8080,
+    "username": "proxy_user_2",
+    "password": "proxy_password_2",
+    "city": "Lahore",
+    "state": "Punjab",
+    "zip": "54000",
+    "country": "PK"
+  },
+  {
+    "ip": "192.168.1.102",
+    "port": 8080,
+    "username": "proxy_user_3",
+    "password": "proxy_password_3",
+    "city": "Islamabad",
+    "state": "Islamabad Capital Territory",
+    "zip": "44000",
+    "country": "PK"
+  },
+  {
+    "ip": "192.168.1.103",
+    "port": 8080,
+    "username": "proxy_user_4",
+    "password": "proxy_password_4",
+    "city": "Karachi",
+    "state": "Sindh",
+    "zip": "75300",
+    "country": "PK"
+  },
+  {
+    "ip": "192.168.1.104",
+    "port": 8080,
+    "username": "proxy_user_5",
+    "password": "proxy_password_5",
+    "city": "Multan",
+    "state": "Punjab",
+    "zip": "60000",
+    "country": "PK"
+  },
+  {
+    "ip": "192.168.1.105",
+    "port": 8080,
+    "username": "proxy_user_6",
+    "password": "proxy_password_6",
+    "city": "Faisalabad",
+    "state": "Punjab",
+    "zip": "38000",
+    "country": "PK"
+  },
+  {
+    "ip": "192.168.1.106",
+    "port": 8080,
+    "username": "proxy_user_7",
+    "password": "proxy_password_7",
+    "city": "Karachi",
+    "state": "Sindh",
+    "zip": "75400",
+    "country": "PK"
+  },
+  {
+    "ip": "192.168.1.107",
+    "port": 8080,
+    "username": "proxy_user_8",
+    "password": "proxy_password_8",
+    "city": "Rawalpindi",
+    "state": "Punjab",
+    "zip": "46000",
+    "country": "PK"
+  },
+  {
+    "ip": "192.168.1.108",
+    "port": 8080,
+    "username": "proxy_user_9",
+    "password": "proxy_password_9",
+    "city": "Hyderabad",
+    "state": "Sindh",
+    "zip": "71000",
+    "country": "PK"
+  },
+  {
+    "ip": "192.168.1.109",
+    "port": 8080,
+    "username": "proxy_user_10",
+    "password": "proxy_password_10",
+    "city": "Peshawar",
+    "state": "Khyber Pakhtunkhwa",
+    "zip": "25000",
+    "country": "PK"
+  }
+]
