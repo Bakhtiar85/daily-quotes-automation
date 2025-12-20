@@ -269,6 +269,151 @@ export async function readStory(
 }
 
 /**
+ * Simulates random mouse movements across the page
+ */
+async function simulateMouseMovement(
+    page: Page,
+    logger: winston.Logger
+): Promise<void> {
+    try {
+        const viewport = page.viewport();
+        if (!viewport) return;
+
+        // Random mouse movements (3-7 movements)
+        const movements = Math.floor(Math.random() * 5) + 3;
+
+        for (let i = 0; i < movements; i++) {
+            const x = Math.floor(Math.random() * viewport.width);
+            const y = Math.floor(Math.random() * viewport.height);
+
+            await page.mouse.move(x, y);
+            await page.waitForTimeout(randomDelay(100, 500));
+        }
+
+        logger.debug('Mouse movements completed', { movements });
+    } catch (error) {
+        logger.debug('Mouse movement failed');
+    }
+}
+
+/**
+ * Selects random text on the page
+ */
+async function selectRandomText(
+    page: Page,
+    logger: winston.Logger
+): Promise<boolean> {
+    try {
+        const textSelected = await page.evaluate(() => {
+            const textElements = Array.from(document.querySelectorAll('p, blockquote, span, div'));
+            const elementsWithText = textElements.filter(el =>
+                el.textContent && el.textContent.trim().length > 20
+            );
+
+            if (elementsWithText.length === 0) return false;
+
+            const randomElement = elementsWithText[
+                Math.floor(Math.random() * elementsWithText.length)
+            ];
+
+            const range = document.createRange();
+            const selection = window.getSelection();
+
+            if (!selection || !randomElement.firstChild) return false;
+
+            range.selectNodeContents(randomElement.firstChild);
+            selection.removeAllRanges();
+            selection.addRange(range);
+
+            return true;
+        });
+
+        if (textSelected) {
+            logger.debug('Text selected');
+            await page.waitForTimeout(randomDelay(1000, 3000));
+
+            // Deselect
+            await page.evaluate(() => {
+                const selection = window.getSelection();
+                if (selection) selection.removeAllRanges();
+            });
+        }
+
+        return textSelected;
+    } catch (error) {
+        logger.debug('Text selection failed');
+        return false;
+    }
+}
+
+/**
+ * Randomly clicks on non-interactive elements (not buttons/links)
+ */
+async function randomPageClick(
+    page: Page,
+    logger: winston.Logger
+): Promise<boolean> {
+    try {
+        const clicked = await page.evaluate(() => {
+            const clickableElements = Array.from(
+                document.querySelectorAll('div, section, article, p')
+            );
+
+            if (clickableElements.length === 0) return false;
+
+            const randomElement = clickableElements[
+                Math.floor(Math.random() * clickableElements.length)
+            ] as HTMLElement;
+
+            randomElement.click();
+            return true;
+        });
+
+        if (clicked) {
+            logger.debug('Random click performed');
+            await page.waitForTimeout(randomDelay(300, 800));
+        }
+
+        return clicked;
+    } catch (error) {
+        logger.debug('Random click failed');
+        return false;
+    }
+}
+
+/**
+ * Hovers over random elements
+ */
+async function hoverOverElements(
+    page: Page,
+    logger: winston.Logger
+): Promise<void> {
+    try {
+        const elements = await page.$$('button, a, .card, img');
+
+        if (elements.length === 0) return;
+
+        // Hover over 1-3 random elements
+        const hoverCount = Math.min(Math.floor(Math.random() * 3) + 1, elements.length);
+
+        for (let i = 0; i < hoverCount; i++) {
+            const randomElement = elements[Math.floor(Math.random() * elements.length)];
+
+            try {
+                await randomElement.hover();
+                await page.waitForTimeout(randomDelay(500, 1500));
+            } catch {
+                // Element might not be hoverable
+            }
+        }
+
+        logger.debug('Hover actions completed', { hoverCount });
+    } catch (error) {
+        logger.debug('Hover failed');
+    }
+}
+
+/**
  * Executes complete user behavior pattern on a page
  * 
  * @param page - Puppeteer page instance
@@ -323,6 +468,27 @@ export async function visitPage(
         // Read main quote
         await simulateReading(page, 'blockquote', logger);
         actions.push('read_quote');
+
+        // Random realistic interactions (30% chance each)
+        if (Math.random() < 0.3) {
+            await simulateMouseMovement(page, logger);
+            actions.push('mouse_movement');
+        }
+
+        if (Math.random() < 0.3) {
+            const selected = await selectRandomText(page, logger);
+            if (selected) actions.push('text_selected');
+        }
+
+        if (Math.random() < 0.2) {
+            await hoverOverElements(page, logger);
+            actions.push('hover_elements');
+        }
+
+        if (Math.random() < 0.2) {
+            const clicked = await randomPageClick(page, logger);
+            if (clicked) actions.push('random_click');
+        }
 
         // Random chance to click random quote button
         if (Math.random() < (behavior.clickRandomQuote ? 0.7 : 0)) {
