@@ -1,0 +1,32 @@
+{
+  "name": "quotes-traffic-simulator",
+  "version": "1.0.0",
+  "description": "Scalable traffic simulator for Daily Quotes website",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "simulate": "npm run build && npm start"
+  },
+  "keywords": [
+    "traffic",
+    "automation",
+    "puppeteer",
+    "testing"
+  ],
+  "author": "Makhdoom",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.6.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "winston": "^3.11.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}
