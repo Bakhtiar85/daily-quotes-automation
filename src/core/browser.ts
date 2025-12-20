@@ -11,7 +11,7 @@
  * - closeBrowser(): Safely closes browser and cleans up resources
  */
 
-import puppeteer, { Browser, Page } from 'puppeteer';
+import { Browser, Page } from 'puppeteer';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { SessionConfig } from '../types';
 import * as winston from 'winston';

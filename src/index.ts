@@ -17,6 +17,7 @@
  * npm start    (production mode)
  */
 
+import 'dotenv/config';
 import * as path from 'path';
 import { validateAndLoadConfig } from './config/loader';
 import { createSessionPairs } from './config/matcher';
@@ -29,33 +30,22 @@ import { SimulatorConfig } from './types';
  * Defines all runtime parameters for the simulation
  */
 const SIMULATOR_CONFIG: SimulatorConfig = {
-  // Number of concurrent users to simulate
-  concurrentUsers: 5,
-  
-  // Target website URL
-  targetUrl: 'https://your-quotes-website.vercel.app', // TODO: Replace with your actual URL
-  
-  // Config file paths
+  concurrentUsers: parseInt(process.env.CONCURRENT_USERS || '5'),
+  targetUrl: process.env.TARGET_URL || 'https://daily-quotes-blond.vercel.app/',
   proxyListPath: path.join(__dirname, '../config/proxies.json'),
   userListPath: path.join(__dirname, '../config/users.json'),
   deviceConfigsPath: path.join(__dirname, '../config/devices.json'),
-  
-  // Log directory
   logDirectory: path.join(__dirname, '../logs'),
-  
-  // Browser settings
-  headless: true, // Set to false to see browsers in action
-  
-  // Default user behavior pattern
+  headless: process.env.HEADLESS === 'true',
   defaultBehavior: {
-    minScrollDepth: 40,      // Scroll at least 40% down
-    maxScrollDepth: 90,      // Scroll at most 90% down
-    minTimeOnPage: 10,       // Minimum 10 seconds per page
-    maxTimeOnPage: 45,       // Maximum 45 seconds per page
-    clickRandomQuote: true,  // 70% chance to click random quote
-    readStory: true,         // 60% chance to read story
-    visitMultiplePages: true, // Enable multi-page visits
-    maxPagesToVisit: 2       // Visit up to 2 additional pages
+    minScrollDepth: parseInt(process.env.MIN_SCROLL_DEPTH || '40'),
+    maxScrollDepth: parseInt(process.env.MAX_SCROLL_DEPTH || '90'),
+    minTimeOnPage: parseInt(process.env.MIN_TIME_ON_PAGE || '10'),
+    maxTimeOnPage: parseInt(process.env.MAX_TIME_ON_PAGE || '45'),
+    clickRandomQuote: parseFloat(process.env.CLICK_RANDOM_QUOTE_PROBABILITY || '0.7') > 0,
+    readStory: parseFloat(process.env.READ_STORY_PROBABILITY || '0.6') > 0,
+    visitMultiplePages: process.env.VISIT_MULTIPLE_PAGES === 'true',
+    maxPagesToVisit: parseInt(process.env.MAX_PAGES_TO_VISIT || '2')
   }
 };
 
@@ -129,7 +119,7 @@ async function main(): Promise<void> {
 
     // Step 4: Final metrics
     const finalMetrics = orchestrator.getTracker().getMetrics();
-    
+
     logMetrics(logger, {
       totalSessions: finalMetrics.totalSessions,
       successRate: finalMetrics.successRate,
@@ -146,11 +136,11 @@ async function main(): Promise<void> {
         errorMessage: error.message,
         stack: error.stack
       });
-      
+
       console.error('\n❌ Simulation failed:', error.message);
       console.error('\nCheck logs for details:', SIMULATOR_CONFIG.logDirectory);
     }
-    
+
     process.exit(1);
   }
 }
