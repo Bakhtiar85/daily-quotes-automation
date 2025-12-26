@@ -6,14 +6,11 @@
   "scripts": {
     "dev": "ts-node src/index.ts",
     "loop": "ts-node src/index-loop.ts",
+    "continuous": "ts-node src/index-continuous.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "start:loop": "node dist/index-loop.js",
-    "pm2:start": "npm run build && pm2 start ecosystem.config.js",
-    "pm2:stop": "pm2 stop quotes-traffic-simulator",
-    "pm2:restart": "pm2 restart quotes-traffic-simulator",
-    "pm2:logs": "pm2 logs quotes-traffic-simulator",
-    "pm2:status": "pm2 status"
+    "start:continuous": "node dist/index-continuous.js"
   },
   "keywords": [
     "traffic",
