@@ -96,7 +96,8 @@ async function main(): Promise<void> {
       console.log(
         `  ${index + 1}. ${session.user.username} -> ` +
         `${session.proxy.city} (${session.proxy.ip}) -> ` +
-        `${session.device.os} ${session.device.type}`
+        `${session.device.os} ${session.device.type} -> ` +
+        `${session.trafficSource.name}`  // ADD THIS LINE
       );
     });
 

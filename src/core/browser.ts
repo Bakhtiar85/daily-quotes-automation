@@ -140,12 +140,25 @@ export async function configurePage(
         await page.setUserAgent(device.userAgent);
 
         // Set extra HTTP headers to look more realistic
-        await page.setExtraHTTPHeaders({
+        const headers: Record<string, string> = {
             'Accept-Language': 'en-US,en;q=0.9',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1'
+        };
+
+        // Add referer if not direct traffic
+        if (session.trafficSource.referer) {
+            headers['Referer'] = session.trafficSource.referer;
+        }
+
+        await page.setExtraHTTPHeaders(headers);
+
+        logger.debug('Traffic source set', {
+            sessionId: session.sessionId,
+            source: session.trafficSource.name,
+            referer: session.trafficSource.referer || 'Direct'
         });
 
         // Set geolocation if available (optional enhancement)

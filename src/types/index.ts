@@ -3,6 +3,21 @@
  * Defines all interfaces and types used across the system
  */
 
+export interface TrafficSource {
+  name: string;
+  referer: string;
+  weight: number; // Probability weight
+}
+
+export interface SessionConfig {
+  user: UserProfile;
+  proxy: ProxyConfig;
+  device: DeviceConfig;
+  trafficSource: TrafficSource;  // ADD THIS LINE
+  sessionId: string;
+  startTime: Date;
+}
+
 export interface ProxyConfig {
     ip: string;
     port: number;

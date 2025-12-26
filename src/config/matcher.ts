@@ -12,6 +12,7 @@
  */
 
 import { ProxyConfig, UserProfile, DeviceConfig, SessionConfig } from '../types';
+import { getRandomTrafficSource } from './referers';
 import { randomUUID } from 'crypto';
 
 /**
@@ -140,11 +141,12 @@ export function createSessionPairs(
             // Select random device
             const device = getRandomDevice(devices);
 
-            // Create session configuration
+            // In createSessionPairs function, update session creation:
             const session: SessionConfig = {
                 user,
                 proxy,
                 device,
+                trafficSource: getRandomTrafficSource(),
                 sessionId: randomUUID(),
                 startTime: new Date()
             };
