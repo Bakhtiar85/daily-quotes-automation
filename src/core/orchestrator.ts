@@ -156,19 +156,40 @@ export class Orchestrator {
         sessions: SessionConfig[],
         behavior: BehaviorPattern
     ): Promise<void> {
-        this.logger.info('Starting concurrent sessions', {
+        this.logger.info('Starting staggered sessions', {
             sessionCount: sessions.length
         });
 
-        // Launch all sessions in parallel
-        const sessionPromises = sessions.map(session =>
-            this.runSingleSession(session, behavior)
-        );
+        // Shuffle sessions for random order
+        const shuffledSessions = [...sessions].sort(() => Math.random() - 0.5);
+
+        // Launch sessions with random delays
+        const sessionPromises: Promise<void>[] = [];
+
+        for (let i = 0; i < shuffledSessions.length; i++) {
+            const session = shuffledSessions[i];
+
+            // Random delay between 5-30 seconds before launching each session
+            const delaySeconds = Math.floor(Math.random() * 26) + 5; // 5-30 seconds
+
+            this.logger.info(`Scheduling session ${i + 1}/${shuffledSessions.length}`, {
+                username: session.user.username,
+                delaySeconds
+            });
+
+            // Launch after delay (but don't wait - fire and forget)
+            const promise = (async () => {
+                await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
+                await this.runSingleSession(session, behavior);
+            })();
+
+            sessionPromises.push(promise);
+        }
 
         // Wait for all sessions to complete
         await Promise.all(sessionPromises);
 
-        this.logger.info('All concurrent sessions completed');
+        this.logger.info('All staggered sessions completed');
     }
 
     /**
