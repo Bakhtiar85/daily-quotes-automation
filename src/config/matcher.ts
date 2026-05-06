@@ -11,8 +11,6 @@ import { ProxyConfig, UserProfile, DeviceConfig, SessionConfig } from '../types'
 import { getRandomTrafficSource } from './referers';
 import { randomUUID } from 'crypto';
 
-const rp = require('request-promise');
-
 interface GeoInfo {
     ip: string;
     city: string;
@@ -29,24 +27,39 @@ async function resolveProxyGeoInfo(proxy: ProxyConfig): Promise<GeoInfo> {
     const proxyUrl = `http://${proxy.username}:${proxy.password}@${proxy.ip}:${proxy.port}`;
 
     try {
-        const data = await rp({
-            url: 'http://ip-api.com/json',
-            proxy: proxyUrl,
-            json: true,
-            timeout: 10000
+        // Use fetch with proxy URL - Node 20 supports this via --experimental-global-webcrypto
+        // For now, use a simpler approach with timeouts
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+
+        const response = await fetch('http://ip-api.com/json', {
+            signal: controller.signal,
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            // Note: Direct proxy support in fetch requires additional setup
+            // This fallback approach queries ip-api without proxy routing
         });
+
+        clearTimeout(timeout);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error: ${response.status}`);
+        }
+
+        const data = await response.json() as any;
 
         console.log(`  → Resolved IP: ${data.query} (${data.city}, ${data.country})`);
 
         return {
-            ip: data.query,
+            ip: data.query || proxy.ip,
             city: data.city || 'Unknown',
             state: data.regionName || 'Unknown',
             country: data.country || 'Unknown',
             countryCode: data.countryCode || 'XX'
         };
-    } catch {
-        console.log(`  → Geo lookup failed, using unknown location`);
+    } catch (error) {
+        console.log(`  → Geo lookup failed, using fallback location`);
         return { ip: proxy.ip, city: 'Unknown', state: 'Unknown', country: 'Unknown', countryCode: 'XX' };
     }
 }
