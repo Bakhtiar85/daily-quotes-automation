@@ -12,12 +12,11 @@
  */
 
 import { Browser, Page } from 'puppeteer';
+import puppeteerExtra from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { SessionConfig } from '../types';
 import * as winston from 'winston';
 
-// Apply stealth plugin to prevent bot detection
-const puppeteerExtra = require('puppeteer-extra');
 puppeteerExtra.use(StealthPlugin());
 
 /**

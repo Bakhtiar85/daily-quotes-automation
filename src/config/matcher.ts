@@ -24,8 +24,6 @@ interface GeoInfo {
  * Falls back to unknown values if the lookup fails so a session can still proceed.
  */
 async function resolveProxyGeoInfo(proxy: ProxyConfig): Promise<GeoInfo> {
-    const proxyUrl = `http://${proxy.username}:${proxy.password}@${proxy.ip}:${proxy.port}`;
-
     try {
         // Use fetch with proxy URL - Node 20 supports this via --experimental-global-webcrypto
         // For now, use a simpler approach with timeouts
