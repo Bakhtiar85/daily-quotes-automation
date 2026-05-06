@@ -44,7 +44,7 @@ export function loadProxies(filePath: string): ProxyConfig[] {
 
         // Validate each proxy has required fields
         proxies.forEach((proxy, index) => {
-            const required = ['ip', 'port', 'username', 'password', 'city', 'state', 'zip'];
+            const required = ['ip', 'port', 'username', 'password'];
             required.forEach(field => {
                 if (!(field in proxy)) {
                     throw new Error(`Proxy at index ${index} missing required field: ${field}`);
@@ -89,7 +89,7 @@ export function loadUsers(filePath: string): UserProfile[] {
 
         // Validate each user has required fields
         users.forEach((user, index) => {
-            const required = ['email', 'username', 'zip', 'city'];
+            const required = ['email', 'username', 'city'];
             required.forEach(field => {
                 if (!(field in user)) {
                     throw new Error(`User at index ${index} missing required field: ${field}`);

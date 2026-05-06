@@ -68,7 +68,7 @@ async function runSimulationBatch(
         timestamp: batchStartTime.toISOString()
     });
 
-    const sessions = createSessionPairs(
+    const sessions = await createSessionPairs(
         configs.users,
         configs.proxies,
         configs.devices,

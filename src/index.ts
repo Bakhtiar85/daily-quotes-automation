@@ -81,7 +81,7 @@ async function main(): Promise<void> {
 
     // Step 2: Create session pairs
     console.log(`\n👥 Creating ${SIMULATOR_CONFIG.concurrentUsers} session configurations...`);
-    const sessions = createSessionPairs(
+    const sessions = await createSessionPairs(
       users,
       proxies,
       devices,

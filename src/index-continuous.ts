@@ -163,7 +163,7 @@ class ContinuousOrchestrator {
         this.activeSessionCount++;
 
         try {
-            const sessions = createSessionPairs(
+            const sessions = await createSessionPairs(
                 this.users,
                 this.proxies,
                 this.devices,

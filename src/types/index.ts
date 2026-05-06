@@ -25,14 +25,14 @@ export interface ProxyConfig {
     password: string;
     city: string;
     state: string;
-    zip: string;
+    zip?: string;
     country?: string;
 }
 
 export interface UserProfile {
     email: string;
     username: string;
-    zip: string;
+    zip?: string;
     city: string;
     state?: string;
     country?: string;
