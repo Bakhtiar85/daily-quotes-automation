@@ -575,10 +575,11 @@ export async function executeSession(
 
         // Visit additional pages based on behavior
         if (behavior.visitMultiplePages && Math.random() < 0.5) {
+            const base = baseUrl.replace(/\/$/, '');
             const additionalPages = [
-                `${baseUrl}/all-quotes`,
-                `${baseUrl}/privacy`,
-                `${baseUrl}/terms`
+                `${base}/all-quotes`,
+                `${base}/privacy`,
+                `${base}/terms`
             ];
 
             const pagesToVisit = Math.min(
