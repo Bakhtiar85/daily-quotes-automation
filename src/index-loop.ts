@@ -5,13 +5,13 @@
  * Runs indefinitely until manually stopped (Ctrl+C or PM2 stop)
  */
 
+import 'dotenv/config';
 import * as path from 'path';
 import { validateAndLoadConfig } from './config/loader';
 import { createSessionPairs } from './config/matcher';
 import { createLogger, logMetrics } from './utils/logger';
 import { Orchestrator } from './core/orchestrator';
 import { SimulatorConfig } from './types';
-import 'dotenv/config';
 
 const SIMULATOR_CONFIG: SimulatorConfig = {
     concurrentUsers: parseInt(process.env.CONCURRENT_USERS || '5'),
