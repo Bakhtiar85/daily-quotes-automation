@@ -11,11 +11,18 @@
  * - closeBrowser(): Safely closes browser and cleans up resources
  */
 
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { Browser, Page } from 'puppeteer';
 import puppeteerExtra from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import { SessionConfig } from '../types';
 import * as winston from 'winston';
+
+function sessionProfileDir(sessionId: string): string {
+    return path.join(os.tmpdir(), `chrome-session-${sessionId}`);
+}
 
 puppeteerExtra.use(StealthPlugin());
 
@@ -47,6 +54,7 @@ export async function createBrowser(
         // Build browser launch arguments
         const args = [
             `--proxy-server=http://${proxy.ip}:${proxy.port}`,
+            `--user-data-dir=${sessionProfileDir(session.sessionId)}`,
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
@@ -220,6 +228,12 @@ export async function closeBrowser(
 
         // Close browser
         await browser.close();
+
+        // Explicitly remove the Chrome profile dir created for this session
+        const profileDir = sessionProfileDir(sessionId);
+        if (fs.existsSync(profileDir)) {
+            fs.rmSync(profileDir, { recursive: true, force: true });
+        }
 
         logger.info('Browser closed successfully', {
             sessionId,
