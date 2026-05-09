@@ -62,7 +62,9 @@ export async function createBrowser(
             '--disable-gpu',
             '--window-size=1920,1080',
             '--disable-web-security',
-            '--disable-features=IsolateOrigins,site-per-process'
+            '--disable-features=IsolateOrigins,site-per-process',
+            '--disable-crash-reporter',
+            '--disable-breakpad'
         ];
 
         logger.info('Launching browser', {
@@ -218,8 +220,10 @@ export async function closeBrowser(
     sessionId: string,
     logger: winston.Logger
 ): Promise<void> {
+    let pagesClosedCount = 0;
     try {
         const pages = await browser.pages();
+        pagesClosedCount = pages.length;
 
         // Close all pages first
         for (const page of pages) {
@@ -229,15 +233,9 @@ export async function closeBrowser(
         // Close browser
         await browser.close();
 
-        // Explicitly remove the Chrome profile dir created for this session
-        const profileDir = sessionProfileDir(sessionId);
-        if (fs.existsSync(profileDir)) {
-            fs.rmSync(profileDir, { recursive: true, force: true });
-        }
-
         logger.info('Browser closed successfully', {
             sessionId,
-            pagesClosedCount: pages.length
+            pagesClosedCount
         });
     } catch (error) {
         if (error instanceof Error) {
@@ -247,6 +245,12 @@ export async function closeBrowser(
             });
         }
         // Don't throw - we want cleanup to continue even if there's an error
+    } finally {
+        // Always remove the Chrome profile dir — even if browser.close() threw
+        const profileDir = sessionProfileDir(sessionId);
+        if (fs.existsSync(profileDir)) {
+            fs.rmSync(profileDir, { recursive: true, force: true });
+        }
     }
 }
 
