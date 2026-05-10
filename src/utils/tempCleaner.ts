@@ -4,14 +4,15 @@ import * as os from 'os';
 import * as path from 'path';
 import * as winston from 'winston';
 
-const PROFILE_PREFIX = 'chrome-session-';
+const CHROME_SESSION_PREFIX = 'chrome-session-';
+const PUPPETEER_DEV_PREFIX = 'puppeteer_dev_profile-';
 const THRESHOLD_BYTES = 900 * 1024 * 1024; // 900 MB
 const MONITOR_INTERVAL_MS = 5 * 60 * 1000; // every 5 minutes
 
-function getProfileDirs(): string[] {
+function getProfileDirs(prefix: string): string[] {
     try {
         return fs.readdirSync(os.tmpdir())
-            .filter(name => name.startsWith(PROFILE_PREFIX))
+            .filter(name => name.startsWith(prefix))
             .map(name => path.join(os.tmpdir(), name))
             .filter(p => { try { return fs.statSync(p).isDirectory(); } catch { return false; } });
     } catch {
@@ -57,14 +58,31 @@ function killChromeForProfile(profileDir: string, logger: winston.Logger): void 
     } catch { /* wmic unavailable or no matches — safe to ignore */ }
 }
 
-export function runCleanup(getActiveSessions: () => Set<string>, logger: winston.Logger): void {
-    const profileDirs = getProfileDirs();
-    if (profileDirs.length === 0) return;
+function deleteDir(dir: string, logger: winston.Logger): boolean {
+    killChromeForProfile(dir, logger);
+    try {
+        fs.rmSync(dir, { recursive: true, force: true });
+        return true;
+    } catch {
+        return false;
+    }
+}
 
-    const totalBytes = profileDirs.reduce((sum, d) => sum + dirSizeSync(d), 0);
+export function runCleanup(getActiveSessions: () => Set<string>, logger: winston.Logger): void {
+    const sessionDirs = getProfileDirs(CHROME_SESSION_PREFIX);
+    const puppeteerDirs = getProfileDirs(PUPPETEER_DEV_PREFIX);
+    const allDirs = [...sessionDirs, ...puppeteerDirs];
+
+    if (allDirs.length === 0) return;
+
+    const totalBytes = allDirs.reduce((sum, d) => sum + dirSizeSync(d), 0);
     const totalMB = (totalBytes / 1024 / 1024).toFixed(1);
 
-    logger.info('Temp cleanup check', { totalMB: `${totalMB} MB`, dirs: profileDirs.length });
+    logger.info('Temp cleanup check', {
+        totalMB: `${totalMB} MB`,
+        sessionDirs: sessionDirs.length,
+        puppeteerDirs: puppeteerDirs.length
+    });
 
     if (totalBytes < THRESHOLD_BYTES) return;
 
@@ -77,23 +95,21 @@ export function runCleanup(getActiveSessions: () => Set<string>, logger: winston
     let cleaned = 0;
     let skipped = 0;
 
-    for (const dir of profileDirs) {
-        const sessionId = path.basename(dir).slice(PROFILE_PREFIX.length);
-
+    // chrome-session-* dirs: skip any that belong to a currently active session
+    for (const dir of sessionDirs) {
+        const sessionId = path.basename(dir).slice(CHROME_SESSION_PREFIX.length);
         if (activeSessions.has(sessionId)) {
             skipped++;
             continue;
         }
+        if (deleteDir(dir, logger)) cleaned++;
+        else skipped++;
+    }
 
-        // Kill any stuck Chrome process holding locks on this dir before deleting
-        killChromeForProfile(dir, logger);
-
-        try {
-            fs.rmSync(dir, { recursive: true, force: true });
-            cleaned++;
-        } catch {
-            skipped++;
-        }
+    // puppeteer_dev_profile-* dirs: always orphans (current code uses chrome-session-* instead)
+    for (const dir of puppeteerDirs) {
+        if (deleteDir(dir, logger)) cleaned++;
+        else skipped++;
     }
 
     logger.warn('Temp sweep complete', { cleaned, skipped, totalMB: `${totalMB} MB` });
