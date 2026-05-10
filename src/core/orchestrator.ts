@@ -19,6 +19,7 @@ import { SessionTracker } from './sessionTracker';
 import { createBrowser, configurePage, closeBrowser } from './browser';
 import { executeSession } from '../behaviors/userBehavior';
 import { logSessionStart, logSessionEnd } from '../utils/logger';
+import { startCleanupMonitor, stopCleanupMonitor } from '../utils/tempCleaner';
 
 /**
  * Orchestrator class - Main simulation controller
@@ -39,6 +40,7 @@ export class Orchestrator {
     private logger: winston.Logger;
     private tracker: SessionTracker;
     private activeBrowsers: Map<string, Browser>;
+    private cleanupTimer: NodeJS.Timeout | null = null;
 
     /**
      * Initializes orchestrator with configuration
@@ -214,6 +216,11 @@ export class Orchestrator {
             startTime: startTime.toISOString()
         });
 
+        this.cleanupTimer = startCleanupMonitor(
+            () => new Set(this.activeBrowsers.keys()),
+            this.logger
+        );
+
         try {
             // Run all sessions
             await this.runConcurrentSessions(sessions, this.config.defaultBehavior);
@@ -240,6 +247,11 @@ export class Orchestrator {
                 errorMessage: error instanceof Error ? error.message : 'Unknown error'
             });
             throw error;
+        } finally {
+            if (this.cleanupTimer) {
+                stopCleanupMonitor(this.cleanupTimer);
+                this.cleanupTimer = null;
+            }
         }
     }
 
@@ -262,6 +274,11 @@ export class Orchestrator {
      */
     public async shutdown(): Promise<void> {
         this.logger.warn('Initiating shutdown...');
+
+        if (this.cleanupTimer) {
+            stopCleanupMonitor(this.cleanupTimer);
+            this.cleanupTimer = null;
+        }
 
         const closePromises = Array.from(this.activeBrowsers.entries()).map(
             async ([sessionId, browser]) => {
