@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -33,6 +34,29 @@ function dirSizeSync(dirPath: string): number {
     return total;
 }
 
+// Kills any Chrome processes whose command line references this specific profile dir.
+// Uses wmic to match by --user-data-dir, so only the orphaned Chrome instance is killed.
+function killChromeForProfile(profileDir: string, logger: winston.Logger): void {
+    const dirName = path.basename(profileDir);
+    try {
+        const output = execSync(
+            `wmic process where "Name like '%chrome%' and CommandLine like '%${dirName}%'" get ProcessId /format:value`,
+            { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'], timeout: 5000 }
+        );
+
+        const pids = (output.match(/ProcessId=(\d+)/g) ?? [])
+            .map(m => m.split('=')[1])
+            .filter(pid => pid && pid !== '0');
+
+        for (const pid of pids) {
+            try {
+                execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore', timeout: 3000 });
+                logger.warn('Killed orphaned Chrome process', { pid, profileDir: dirName });
+            } catch { /* already exited */ }
+        }
+    } catch { /* wmic unavailable or no matches — safe to ignore */ }
+}
+
 export function runCleanup(getActiveSessions: () => Set<string>, logger: winston.Logger): void {
     const profileDirs = getProfileDirs();
     if (profileDirs.length === 0) return;
@@ -61,6 +85,9 @@ export function runCleanup(getActiveSessions: () => Set<string>, logger: winston
             continue;
         }
 
+        // Kill any stuck Chrome process holding locks on this dir before deleting
+        killChromeForProfile(dir, logger);
+
         try {
             fs.rmSync(dir, { recursive: true, force: true });
             cleaned++;
@@ -76,7 +103,7 @@ export function startCleanupMonitor(
     getActiveSessions: () => Set<string>,
     logger: winston.Logger
 ): NodeJS.Timeout {
-    // Run immediately on start to clear any leftovers from a previous crash
+    // Run immediately on start to clear leftovers from any previous crash
     runCleanup(getActiveSessions, logger);
 
     return setInterval(() => runCleanup(getActiveSessions, logger), MONITOR_INTERVAL_MS);
