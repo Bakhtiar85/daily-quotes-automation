@@ -165,35 +165,62 @@ export async function scrollPage(
  * Example:
  * const clicked = await clickRandomQuote(page, logger);
  */
+// Performs a click then checks if a new tab/window opened within 2 seconds.
+// If one did, simulates a brief visit and closes it before returning.
+async function clickAndHandleNewTab(
+    page: Page,
+    clickFn: () => Promise<void>,
+    logger: winston.Logger
+): Promise<void> {
+    const browser = page.browser();
+
+    let newTabResolve: (p: Page) => void;
+    const newTabPromise = new Promise<Page>(resolve => { newTabResolve = resolve; });
+
+    const onTarget = async (target: import('puppeteer').Target) => {
+        const newPage = await target.page();
+        if (newPage) newTabResolve(newPage);
+    };
+
+    browser.once('targetcreated', onTarget);
+
+    await clickFn();
+
+    const newPage = await Promise.race([
+        newTabPromise,
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 2000))
+    ]);
+
+    browser.off('targetcreated', onTarget);
+
+    if (newPage) {
+        logger.debug('New tab detected — simulating brief visit');
+        try {
+            await new Promise(resolve => setTimeout(resolve, randomDelay(2000, 5000)));
+            await newPage.close();
+            logger.debug('New tab closed');
+        } catch {
+            // tab may have closed itself
+        }
+    }
+}
+
 export async function clickRandomQuote(
     page: Page,
     logger: winston.Logger
 ): Promise<boolean> {
     try {
-        // Wait for random quote button
         await page.waitForSelector('button', { timeout: 5000 });
 
-        // Find button with text containing "Random"
-        const buttonClicked = await page.evaluate(() => {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            const randomButton = buttons.find(btn =>
-                btn.textContent?.toLowerCase().includes('random')
-            );
-
-            if (randomButton) {
-                randomButton.click();
+        const buttons = await page.$$('button');
+        for (const btn of buttons) {
+            const text = await btn.evaluate(el => el.textContent?.toLowerCase() ?? '');
+            if (text.includes('random')) {
+                await clickAndHandleNewTab(page, () => btn.click(), logger);
+                logger.debug('Clicked random quote button');
+                await page.waitForTimeout(randomDelay(1000, 2000));
                 return true;
             }
-            return false;
-        });
-
-        if (buttonClicked) {
-            logger.debug('Clicked random quote button');
-
-            // Wait for content to update
-            await page.waitForTimeout(randomDelay(1000, 2000));
-
-            return true;
         }
 
         return false;
@@ -229,18 +256,16 @@ export async function readStory(
 ): Promise<boolean> {
     try {
         // Look for "Read Story" button
-        const storyButtonClicked = await page.evaluate(() => {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            const storyButton = buttons.find(btn =>
-                btn.textContent?.toLowerCase().includes('story')
-            );
-
-            if (storyButton) {
-                storyButton.click();
-                return true;
+        const buttons = await page.$$('button');
+        let storyButtonClicked = false;
+        for (const btn of buttons) {
+            const text = await btn.evaluate(el => el.textContent?.toLowerCase() ?? '');
+            if (text.includes('story')) {
+                await clickAndHandleNewTab(page, () => btn.click(), logger);
+                storyButtonClicked = true;
+                break;
             }
-            return false;
-        });
+        }
 
         if (storyButtonClicked) {
             logger.debug('Clicked read story button');
@@ -354,27 +379,14 @@ async function randomPageClick(
     logger: winston.Logger
 ): Promise<boolean> {
     try {
-        const clicked = await page.evaluate(() => {
-            const clickableElements = Array.from(
-                document.querySelectorAll('div, section, article, p')
-            );
+        const elements = await page.$$('div, section, article, p');
+        if (elements.length === 0) return false;
 
-            if (clickableElements.length === 0) return false;
-
-            const randomElement = clickableElements[
-                Math.floor(Math.random() * clickableElements.length)
-            ] as HTMLElement;
-
-            randomElement.click();
-            return true;
-        });
-
-        if (clicked) {
-            logger.debug('Random click performed');
-            await page.waitForTimeout(randomDelay(300, 800));
-        }
-
-        return clicked;
+        const randomElement = elements[Math.floor(Math.random() * elements.length)];
+        await clickAndHandleNewTab(page, () => randomElement.click(), logger);
+        logger.debug('Random click performed');
+        await page.waitForTimeout(randomDelay(300, 800));
+        return true;
     } catch (error) {
         logger.debug('Random click failed');
         return false;
