@@ -77,7 +77,8 @@ export async function createBrowser(
             headless: headless ? 'new' : false,
             args,
             ignoreHTTPSErrors: true,
-            defaultViewport: null
+            defaultViewport: null,
+            protocolTimeout: 120000
         });
 
         logger.info('Browser launched successfully', {
