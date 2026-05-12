@@ -94,6 +94,13 @@ async function simulateReading(
  * Example:
  * await scrollPage(page, 80, logger); // Scroll 80% down the page
  */
+function isContextDestroyed(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+    return error.message.includes('context was destroyed') ||
+        error.message.includes('Target closed') ||
+        error.message.includes('Session closed');
+}
+
 export async function scrollPage(
     page: Page,
     scrollDepthPercent: number,
@@ -116,30 +123,42 @@ export async function scrollPage(
         for (let i = 0; i < scrollSteps; i++) {
             const scrollTo = scrollIncrement * (i + 1);
 
-            await page.evaluate((y) => {
-                window.scrollTo({
-                    top: y,
-                    behavior: 'smooth'
-                });
-            }, scrollTo);
-
-            // Random pause between scrolls (0.5-2 seconds)
-            await page.waitForTimeout(randomDelay(500, 2000));
-
-            // Occasionally scroll back up a bit (25% chance)
-            if (Math.random() < 0.25 && i > 0) {
-                await page.evaluate(() => {
-                    window.scrollBy({
-                        top: -100,
+            try {
+                await page.evaluate((y) => {
+                    window.scrollTo({
+                        top: y,
                         behavior: 'smooth'
                     });
-                });
-                await page.waitForTimeout(randomDelay(300, 800));
+                }, scrollTo);
+
+                // Random pause between scrolls (0.5-2 seconds)
+                await page.waitForTimeout(randomDelay(500, 2000));
+
+                // Occasionally scroll back up a bit (25% chance)
+                if (Math.random() < 0.25 && i > 0) {
+                    await page.evaluate(() => {
+                        window.scrollBy({
+                            top: -100,
+                            behavior: 'smooth'
+                        });
+                    });
+                    await page.waitForTimeout(randomDelay(300, 800));
+                }
+            } catch (stepError) {
+                if (isContextDestroyed(stepError)) {
+                    logger.debug('Scroll interrupted — page navigated mid-scroll');
+                    return;
+                }
+                throw stepError;
             }
         }
 
         logger.debug('Scroll completed', { finalDepth: scrollDepthPercent });
     } catch (error) {
+        if (isContextDestroyed(error)) {
+            logger.debug('Scroll interrupted — page navigated');
+            return;
+        }
         if (error instanceof Error) {
             logger.error('Scroll simulation failed', {
                 errorMessage: error.message

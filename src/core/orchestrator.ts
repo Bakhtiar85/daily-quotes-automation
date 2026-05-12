@@ -81,44 +81,61 @@ export class Orchestrator {
         session: SessionConfig,
         behavior: BehaviorPattern
     ): Promise<void> {
+        const SESSION_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes max per session
+
         let browser: Browser | null = null;
+        let timeoutHandle: NodeJS.Timeout | undefined;
+        let onDisconnected: (() => void) | undefined;
 
         try {
-            // Register session with tracker
             this.tracker.addSession(session);
             logSessionStart(this.logger, session);
 
-            // Launch browser
             browser = await createBrowser(session, this.config.headless, this.logger);
             this.activeBrowsers.set(session.sessionId, browser);
 
-            // Create and configure page
             const page = await browser.newPage();
             await configurePage(page, session, this.logger);
 
-            // Execute user behavior
-            const metrics = await executeSession(
-                page,
-                this.config.targetUrl,
-                behavior,
-                this.logger,
-                session.sessionId
-            );
+            // Watchdog 1: fires immediately if Chrome process crashes/disconnects
+            let rejectOnDisconnect!: (err: Error) => void;
+            const disconnectPromise = new Promise<never>((_, reject) => {
+                rejectOnDisconnect = reject;
+            });
+            onDisconnected = () => {
+                rejectOnDisconnect(new Error('Browser disconnected unexpectedly'));
+            };
+            browser.once('disconnected', onDisconnected);
 
-            // Log completion
+            // Watchdog 2: kills the session if it exceeds the max allowed time
+            const timeoutPromise = new Promise<never>((_, reject) => {
+                timeoutHandle = setTimeout(() => {
+                    reject(new Error(`Session timed out after ${SESSION_TIMEOUT_MS / 60000} minutes`));
+                }, SESSION_TIMEOUT_MS);
+            });
+
+            const metrics = await Promise.race([
+                executeSession(page, this.config.targetUrl, behavior, this.logger, session.sessionId),
+                disconnectPromise,
+                timeoutPromise
+            ]);
+
             logSessionEnd(this.logger, metrics);
             this.tracker.removeSession(session.sessionId, metrics);
 
         } catch (error) {
-            // Handle errors
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-            this.logger.error('Session failed', {
+            this.logger.error('Session failed — killing browser', {
                 sessionId: session.sessionId,
                 errorMessage
             });
 
-            // Record failed session
+            // Force kill the process so a frozen browser does not block the finally cleanup
+            if (browser) {
+                try { browser.process()?.kill(); } catch { /* already dead */ }
+            }
+
             this.tracker.removeSession(session.sessionId, {
                 sessionId: session.sessionId,
                 startTime: session.startTime,
@@ -131,7 +148,9 @@ export class Orchestrator {
             });
 
         } finally {
-            // Clean up browser
+            // Always clean up regardless of how the session ended
+            if (timeoutHandle) clearTimeout(timeoutHandle);
+            if (browser && onDisconnected) browser.off('disconnected', onDisconnected);
             if (browser) {
                 await closeBrowser(browser, session.sessionId, this.logger);
                 this.activeBrowsers.delete(session.sessionId);
@@ -188,8 +207,8 @@ export class Orchestrator {
             sessionPromises.push(promise);
         }
 
-        // Wait for all sessions to complete
-        await Promise.all(sessionPromises);
+        // allSettled — one session rejecting can never cancel the rest of the batch
+        await Promise.allSettled(sessionPromises);
 
         this.logger.info('All staggered sessions completed');
     }
