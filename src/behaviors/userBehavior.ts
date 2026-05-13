@@ -197,8 +197,12 @@ async function clickAndHandleNewTab(
     const newTabPromise = new Promise<Page>(resolve => { newTabResolve = resolve; });
 
     const onTarget = async (target: import('puppeteer').Target) => {
-        const newPage = await target.page();
-        if (newPage) newTabResolve(newPage);
+        try {
+            const newPage = await target.page();
+            if (newPage) newTabResolve(newPage);
+        } catch {
+            // target closed before we could get its page — ignore
+        }
     };
 
     browser.once('targetcreated', onTarget);

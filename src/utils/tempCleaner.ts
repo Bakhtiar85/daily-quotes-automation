@@ -51,7 +51,7 @@ function killChromeForProfile(profileDir: string, logger: winston.Logger): void 
 
         for (const pid of pids) {
             try {
-                execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore', timeout: 3000 });
+                execSync(`taskkill /F /PID ${pid} >nul 2>&1`, { shell: true, timeout: 3000 });
                 logger.warn('Killed orphaned Chrome process', { pid, profileDir: dirName });
             } catch { /* already exited */ }
         }
